@@ -7,7 +7,7 @@ import { ChatEventsHelper } from './chat-events.helper';
 export class IoController {
 
     protected clients: WsClient[] = [];
-
+    
     protected io: SocketIO.Server;
 
     protected userService      = ServiceLocator.getInstance().userService;

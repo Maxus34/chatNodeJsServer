@@ -1,9 +1,10 @@
+import { Dialog, DialogReference } from "./chat.models";
 
 export class User{
     
-    public id :number;
-    public username :string;
-    public email :string;
+    public id        :number;
+    public username  :string;
+    public email     :string;
 
     public dialogs :Dialog[];
 
@@ -16,20 +17,3 @@ export class User{
     }
 }   
 
-interface Dialog{
-    id        :number;
-    title     :string;
-    isActive  :boolean;
-    isCreator :boolean;
-    creatorId :boolean;
-
-    dialogReferences :DialogReference[];
-}
-
-interface DialogReference{
-    id        :number;
-    userId    :number;
-    createdAt :number;
-    createdBy :number;
-    isActive  :number;
-}

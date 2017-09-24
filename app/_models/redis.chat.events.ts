@@ -1,3 +1,4 @@
+import {Dialog, DialogReference } from "./chat.models";
 
 export interface RedisMessageEventData{
     dialogId :number;
@@ -10,22 +11,4 @@ export interface RedisDialogEventData{
     from  :number;
     item  ?: Dialog;
     items ?: Dialog[];
-}
-
-interface Dialog{
-    id        :number;
-    title     :string;
-    isActive  :boolean;
-    isCreator :boolean;
-    creatorId :boolean;
-
-    dialogReferences :DialogReference[];
-}
-
-interface DialogReference{
-    id        :number;
-    userId    :number;
-    createdAt :number;
-    createdBy :number;
-    isActive  :number;
 }

@@ -1,5 +1,5 @@
-const gulp = require('gulp');
-const ts = require('gulp-typescript');
+const gulp    = require('gulp');
+const ts      = require('gulp-typescript');
 const nodemon = require('nodemon');
 
 // pull in the project TypeScript config
@@ -17,7 +17,6 @@ gulp.task('watch', ['scripts'], () => {
 });
 
 gulp.task('default', ['watch', 'nodemon']);
-
 
 gulp.task('nodemon', function (cb) {
 	
