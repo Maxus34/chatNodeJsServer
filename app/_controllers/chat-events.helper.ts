@@ -46,13 +46,12 @@ export class ChatEventsHelper{
             });
         
             if (!dialogExists){
-                
-                console.log(`Added dialog\n`, dialog);
+                console.log(`Added dialog in 'Storage'\n`, dialog);
                 this.dialogs.push(dialog);
 
             } else {
-                dialogExists = dialog;
-                console.log(`Updated dialog\n`, dialog);
+                this.updateDialogData(dialogExists, dialog);
+                console.log(`Updated dialog in 'Storage'\n`, dialog);
             }
         });
 
@@ -68,11 +67,11 @@ export class ChatEventsHelper{
         let fromId   = eventData.from;
         
         if (dialogId && fromId){
-            let usersToSend = this.findClientsForSendEvent(dialogId, fromId);
+            let usersToSend = this.findClientsForSendDialogEvent(dialogId, fromId);
             
             usersToSend.forEach( (wsClient :WsClient) => {
+                console.log(`sending message.created to ${wsClient.username}`);
                 wsClient.socket.emit("message.created", JSON.stringify(eventData));
-                console.log(`Sended to`, wsClient.username);
             });
 
         } else {
@@ -87,9 +86,10 @@ export class ChatEventsHelper{
         let fromId   = eventData.from;
         
         if (dialogId && fromId){
-            let usersToSend = this.findClientsForSendEvent(dialogId, fromId);
+            let usersToSend = this.findClientsForSendDialogEvent(dialogId, fromId);
 
             usersToSend.forEach( (wsClient :WsClient) => {
+                console.log(`sending message.updated to ${wsClient.username}`);
                 wsClient.socket.emit("message.updated", JSON.stringify(eventData));
             });
 
@@ -148,7 +148,9 @@ export class ChatEventsHelper{
         let currentDialog = this.dialogs.find( (dialog) => {
             return dialog.id == dialogId; 
         });
-    
+        
+
+        // Handling changes in dialogReferences and checking events to send to clients;
         if (currentDialog){
             // dialogReferences - new DialogReferences from eventData.
             for (let i = 0; i < dialogReferences.length; i++){
@@ -175,9 +177,9 @@ export class ChatEventsHelper{
             return;
         }
         
-        currentDialog = eventData.item;
-        console.log(`Current Dialog changed to`, currentDialog);
-        
+        this.updateDialogData(currentDialog, eventData.item);
+        console.log(`Dialog became: `, currentDialog);
+
         // Sending evets to clients.
         this.clients.forEach( (client) => {
             if (usersThatWereInDialog.indexOf(client.id) >= 0){
@@ -197,20 +199,41 @@ export class ChatEventsHelper{
     protected handleUserTypingEvent(client:WsClient, eventData :any){
         
         eventData = JSON.parse(eventData);
+        console.log(`Got user.typing`, eventData);
 
-        console.log(`\nGot event -- [TYPING][dID: ${eventData.dialogId}] from ${client.username}`, eventData);
-           
-        let usersToSendEvent = this.findClientsForSendEvent(eventData.dialogId, client.id);
+        if (!this.isClientCanSendEventToDialog(eventData.dialogId, client)){
+            return;
+        }
+
+        let usersToSendEvent = this.findClientsForSendDialogEvent(eventData.dialogId, client.id);
 
         usersToSendEvent.forEach( (wsClient :WsClient) => {
-            console.log(`Sending to`, wsClient.username);
+            console.log(`sending user.typing to ${wsClient.username}`);
             wsClient.socket.emit("user.typing", JSON.stringify(eventData));
         });
     }
     // ---------------------------------------------------
     
+    
+    protected isClientCanSendEventToDialog(dialogId, client :WsClient) :boolean{
+        let dialog = this.dialogs.find( (dialog) => {
+            return dialog.id == dialogId;
+        });
 
-    protected findClientsForSendEvent(dialogId :number, currentClientId :number) :WsClient[]{
+        if (dialog){    
+            let reference = dialog.dialogReferences.find( (reference) => {
+                return reference.userId == client.id;
+            });
+            
+            if (reference){
+                return reference.isActive;
+            } 
+        }
+
+        return false;
+    }
+    
+    protected findClientsForSendDialogEvent(dialogId :number, currentClientId :number) :WsClient[]{
         
         let dialog = this.dialogs.find( (dialog) => {
             return dialog.id == dialogId;
@@ -226,8 +249,9 @@ export class ChatEventsHelper{
                     });    
                 
                     if (currentWsUserForReference){
+                        console.log(`pushing reference to send`, reference);
+
                         usersToSendEvent.push(currentWsUserForReference);
-                        console.log(`Adding to send reference\n`, reference);
                     }
                 }
             });
@@ -238,4 +262,11 @@ export class ChatEventsHelper{
             
         return usersToSendEvent;
     }   
+
+    // -------------- DialogHandling Methods ------------
+    protected updateDialogData(currentDialog :Dialog, dialogData :Dialog){
+        currentDialog.title            = dialogData.title;
+        currentDialog.dialogReferences = dialogData.dialogReferences;
+    }
+    // --------------------------------------------------
 }  

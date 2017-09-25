@@ -1,7 +1,6 @@
 export interface Dialog{
     id        :number;
     title     :string;
-    isActive  :boolean;
     isCreator :boolean;
     creatorId :boolean;
 

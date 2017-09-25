@@ -3,8 +3,7 @@ import {Dialog, DialogReference } from "./chat.models";
 export interface RedisMessageEventData{
     dialogId :number;
     from     :number;
-    item     ?:any;
-    items    ?:any[];
+    item     :Dialog;
 }
 
 export interface RedisDialogEventData{
