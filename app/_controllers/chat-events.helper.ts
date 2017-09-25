@@ -26,6 +26,7 @@ export class ChatEventsHelper{
 
         this.redisService.events.on('dialog.created', this.handleDialogCreatedEvent.bind(this));
         this.redisService.events.on('dialog.updated', this.handleDialogUpdatedEvent.bind(this));
+        this.redisService.events.on('dialog.deleted', this.handleDialogDeletedEvent.bind(this));
     }
 
 
@@ -190,6 +191,36 @@ export class ChatEventsHelper{
                 console.log(`Sending to [was added]`, client.username);
                 client.socket.emit('dialog.created', JSON.stringify(eventData));
             }
+        });
+    }
+
+    protected handleDialogDeletedEvent(eventData :RedisDialogEventData){
+        console.log(`Got dialog.deleted event!`, eventData.item);
+        let fromId           = eventData.from;
+        let dialogId         = eventData.item.id;
+        
+        let currentDialog = this.dialogs.find( (dialog) => {
+            return dialog.id == dialogId; 
+        });
+
+        if (currentDialog){    
+            currentDialog.dialogReferences.forEach((ref, i, arr) => {
+                if (ref.userId == fromId){
+                    console.log(`deleted`, arr.splice(i, 1));
+                }
+            });
+
+        }else{    
+            console.log(`Cant find dialog ${dialogId}`);
+        }
+
+        let usersToSendEvent = this.findClientsForSendDialogEvent(dialogId, fromId);
+
+        usersToSendEvent.forEach( (client) => {
+            client.socket.emit('dialog.updated', JSON.stringify({
+                from: fromId,
+                item: currentDialog
+            }));
         });
     }
     // ---------------------------------------------------
